@@ -1,0 +1,9 @@
+rabbitmqctl stop_app
+rabbitmqctl start_app
+rabbitmqctl reset //stop before resetting
+rabbitmqctl add_user username Password
+rabbitmqctl set_user_tags username administrator //making the user admin
+//setting permission for that user Configure permission (create/delete exchanges, queues, etc.)
+//Write permission (publish messages)
+//Read permission (consume messages)
+rabbitmqctl set_persmission -p / username ".*" ".*" ".*" 

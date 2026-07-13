@@ -1,0 +1,282 @@
+Used docker image.
+# latest RabbitMQ 4.x
+docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-management
+management UI:
+http://localhost:15672
+AMQP CONNECTION:
+Host: localhost
+Port: 5672
+Username: guest
+Password: guest
+you can change the username Password
+
+Dashboard:
+http://localhost:15672
+
+
+AMQP:
+    AMQP stands for Advanced Message Queuing Protocol.
+    It is a messaging protocol that defines how applications communicate by sending and receiving messages through a 
+    message broker like RabbitMQ.
+    Think of it like HTTP for web communication, but instead of transferring web pages/data between clients and servers, 
+    AMQP transfers messages between applications.
+
+A broker (in messaging systems) is a middle service that receives messages from one application and delivers them to another application.
+
+In RabbitMQ, the RabbitMQ server itself is the message broker.
+
+Think of it like a post office:
+    Sender (Producer)
+            |
+            |  Message
+            ↓
+    Message Broker
+    (RabbitMQ)
+            |
+            |  Deliver message
+            ↓
+    Receiver (Consumer)
+
+The producer and consumer do not need to know each other directly. They only communicate through the broker.
+
+Example: Payment system
+
+    #Without a broker:
+    Payment Service  ───────>  Email Service
+    If Email Service is down, Payment Service has a problem.
+
+    #With RabbitMQ broker:
+    Payment Service
+        |
+        | "Payment successful"
+        ↓
+    RabbitMQ Broker
+        |
+        ↓
+    Email Service
+
+    #If Email Service is temporarily down:
+        RabbitMQ keeps the message in a queue.
+        When Email Service comes back, it processes the message.
+
+    #What does a broker do?
+    A message broker typically handles:
+    1.Message storage
+        Holds messages in queues until consumers process them.
+    2.Message routing
+        Decides where messages should go.
+        In RabbitMQ this is done using exchanges and routing keys.
+    3.Delivery
+        Sends messages to consumers.
+    4.Reliability
+        Supports acknowledgements, retries, persistence, etc.
+    5.Decoupling
+        Allows services to work independently.
+    #Popular message brokers:
+        RabbitMQ → AMQP-based messaging
+        Apache Kafka → event streaming platform
+        Apache ActiveMQ → JMS messaging
+
+Export Definitions:
+    It means: take a copy of your RabbitMQ configuration and save it as a JSON file
+    You can export things like:
+    Users
+    Permissions
+    Virtual hosts (vhosts)
+    Exchanges
+    Queues
+    Bindings
+    Policies
+    Parameters
+
+    Example
+    #Your RabbitMQ has:
+        Virtual Host:
+            /production
+        Exchange:
+            order.exchange
+        Queue:
+            order.queue
+        Binding:
+            order.exchange → order.queue
+
+    When you click Export Definitions, RabbitMQ creates a JSON file containing this configuration.
+    Example:
+        {
+        "queues": [
+            {
+            "name": "order.queue",
+            "vhost": "/"
+            }
+        ],
+        "exchanges": [
+            {
+            "name": "order.exchange",
+            "type": "direct"
+            }
+        ]
+        }
+
+Import Definitions:
+    It means: load a previously exported JSON configuration into RabbitMQ.
+    #Example:
+    You have:
+        Developer Laptop RabbitMQ
+                |
+                | Export definitions
+                ↓
+        rabbitmq-config.json
+                |
+                | Import definitions
+                ↓
+        Server RabbitMQ
+
+    Now the server gets the same:
+        queues
+        exchanges
+        users
+        permissions
+        bindings
+
+    without manually creating everything.
+
+    #Real-world use case
+    Imagine your company has:
+        Development RabbitMQ
+    Exchange:
+        payment.events
+    Queue:
+        payment.queue
+    Consumer:
+        Payment Service
+
+    Before deploying to production:
+        Export definitions from Dev.
+        Import definitions into Production.
+        Your RabbitMQ setup is recreated.s
+
+#In RabbitMQ, 
+Queues and Streams are two ways of storing and consuming messages. 
+Fanout is an exchange type used for routing messages.
+
+1. Queue (RabbitMQ Queue)
+    A queue is a buffer that stores messages until a consumer processes them.
+
+    *Example:*
+    Producer
+    |
+    | "Order Created"
+    ↓
+    Queue
+    |
+    ↓
+    Consumer
+    (Order Service)
+
+    #Characteristics:
+        Messages are usually removed after successful consumption.
+        Used for task processing.
+        Multiple consumers can share a queue (work distribution).
+
+    #Example:
+        Queue: image-processing
+
+    #Messages:
+        Image1
+        Image2
+        Image3
+
+    #Workers:
+        Worker-1
+        Worker-2
+
+    #RabbitMQ distributes messages:
+        Image1 → Worker-1
+        Image2 → Worker-2
+        Image3 → Worker-1
+
+#2. Stream (RabbitMQ Streams)
+    A stream is a persistent, append-only log of messages (similar to Kafka topics).
+    Example:
+
+        Producer
+        |
+        ↓
+        Stream
+
+        Message 1
+        Message 2
+        Message 3
+        Message 4
+
+    Consumers can read from any position
+    #Characteristics:
+        Messages are retained for a configured time/size.
+        Consumers can replay old messages.
+        Better for event streaming.
+
+    #Example:
+        Payment Stream
+
+        10:01 Payment Created
+        10:02 Payment Completed
+        10:03 Payment Failed
+
+        A new analytics service can join later and read old events.
+
+    #Queue vs Stream:
+    Feature	                Queue	                    Stream
+    Purpose	                Task delivery	            Event storage
+    Message removal	        After consumption	        Retained
+    Replay messages	❌       Usually no	                ✅ Yes
+    Multiple consumers	    Compete for messages	    Each can have own offset Similar to	Work queue	Kafka topic
+
+Fanout Exchange:
+    Fanout is an exchange type in RabbitMQ.
+    It broadcasts every message to all connected queues.
+
+    Example:
+
+                    Queue 1
+                    (Email)
+                    ↑
+                    |
+    Producer → Fanout Exchange
+                    |
+                    ↓
+                    Queue 2
+                (Analytics)
+                    |
+                    ↓
+                    Queue 3
+                (Logging)
+
+    When producer sends:
+    "Payment Completed"
+    #All queues receive it:
+        Email Service       → Payment Completed
+        Analytics Service   → Payment Completed
+        Logging Service     → Payment Completed
+    #Fanout characteristics:
+        Ignores routing keys.
+        Sends a copy to every bound queue.
+        Used for broadcast events.
+
+    #Real-world example:
+    A user registers:
+        User Service
+            |
+            ↓
+        user.created exchange (fanout)
+            |
+            +---- Email Service
+            |
+            +---- CRM Service
+            |
+            +---- Analytics Service
+
+    Each service gets the same event.
+
+Queue = one message, one consumer (or one competing group)
+Fanout = one message, many queues
+Stream = stored events that can be replayed

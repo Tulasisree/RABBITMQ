@@ -1,0 +1,330 @@
+1. Program entry point
+public static async Task Main(string[] args)
+
+Your application starts here.
+
+Why async Task Main?
+
+Because RabbitMQ 7.x uses asynchronous methods:
+
+await factory.CreateConnectionAsync();
+await connection.CreateChannelAsync();
+await channel.BasicConsumeAsync();
+
+Without async, you cannot use await.
+
+2. Create RabbitMQ connection factory
+var factory = new ConnectionFactory()
+{
+    HostName = "localhost"
+};
+
+ConnectionFactory is an object used to create connections to RabbitMQ.
+
+You are saying:
+
+"RabbitMQ server is running on my machine."
+
+Your Docker container exposes RabbitMQ on localhost:
+
+Your C# App
+     |
+     |
+localhost:5672
+     |
+     |
+RabbitMQ Server
+3. Open connection
+await using var connection = await factory.CreateConnectionAsync();
+
+This has two parts:
+
+Creating the connection
+await factory.CreateConnectionAsync()
+
+returns:
+
+Task<IConnection>
+
+After await:
+
+IConnection
+
+Now you have a live connection:
+
+C# Application
+       |
+       |
+       |  TCP connection
+       |
+       |
+RabbitMQ Server
+Why await using?
+await using var connection
+
+means:
+
+When this method finishes, automatically close the RabbitMQ connection asynchronously.
+
+Equivalent idea:
+
+try
+{
+   // use connection
+}
+finally
+{
+   await connection.DisposeAsync();
+}
+
+4. Create channel
+await using var channel = await connection.CreateChannelAsync();
+
+A channel is a lightweight communication path inside a connection.
+
+Usually:
+
+Connection
+    |
+    |---- Channel 1
+    |
+    |---- Channel 2
+    |
+    |---- Channel 3
+
+You don't create a new TCP connection for every operation.
+
+Channels are used for:
+
+creating queues
+publishing messages
+consuming messages
+5. Declare the queue
+await channel.QueueDeclareAsync(
+    "BasicTest",
+    true,
+    false,
+    false,
+    null);
+
+This creates or checks if the queue exists.
+
+Parameters:
+
+QueueDeclareAsync(
+    queue,
+    durable,
+    exclusive,
+    autoDelete,
+    arguments
+)
+
+Your values:
+
+Parameter	Value	Meaning
+queue	BasicTest	Queue name
+durable	true	Survives RabbitMQ restart
+exclusive	false	Other consumers can use it
+autoDelete	false	Do not delete automatically
+arguments	null	No extra settings
+
+So your queue is:
+
+RabbitMQ
+
+Queue: BasicTest
+-----------------
+|               |
+|  messages     |
+|               |
+-----------------
+6. Create consumer
+var consumer = new AsyncEventingBasicConsumer(channel);
+
+This creates a message listener.
+
+Think:
+
+Queue
+ |
+ |
+Consumer
+ |
+ |
+Your C# code
+
+When a message arrives, RabbitMQ triggers an event.
+
+7. Subscribe to message received event
+consumer.ReceivedAsync += async (channel, a) =>
+{
+    ...
+};
+
++= in RabbitMQ Consumer (Brief Summary)
+    ReceivedAsync is an event that is triggered when RabbitMQ delivers a message.
+    += means subscribe/attach a handler to that event.
+    The lambda function:
+    async (channel, a) => { }
+
+This means:
+"When RabbitMQ delivers a message, execute this code."
+
+The lambda is the message handler.
+
+It is similar to:
+void WhenMessageArrives(Message message)
+{
+}
+Inside the handler
+Get message bytes
+var body = a.Body.ToArray();
+
+RabbitMQ sends messages as bytes.
+
+Example:
+
+"Hello RabbitMQ"
+
+becomes:
+
+[72,101,108,108,111...]
+
+You convert:
+
+ReadOnlyMemory<byte>
+        |
+        |
+        ▼
+     byte[]
+Convert bytes to string
+var message = Encoding.UTF8.GetString(body);
+
+Example:
+
+byte[]
+ |
+ |
+ ▼
+
+"Hello RabbitMQ"
+
+because humans cannot read raw bytes.
+
+Print message
+Console.WriteLine(
+    "Receiver message {0}",
+    message);
+
+Output:
+
+Receiver message Getting started with .NET Core RabbitMQ
+8. Start consuming
+await channel.BasicConsumeAsync(
+    "BasicTest",
+    true,
+    consumer);
+
+This tells RabbitMQ:
+
+"Start sending messages from BasicTest queue to this consumer."
+
+Parameters:
+
+BasicConsumeAsync(
+    queue,
+    autoAck,
+    consumer
+)
+
+Your code:
+
+"BasicTest"
+
+Consume from this queue.
+
+What does true mean?
+autoAck: true
+
+Acknowledgement.
+
+With true:
+
+RabbitMQ
+    |
+    | sends message
+    ▼
+Consumer
+    |
+    |
+Message automatically removed
+
+If your application crashes after receiving:
+
+Message lost ❌
+
+With:
+
+autoAck: false
+
+you manually confirm:
+
+RabbitMQ
+    |
+    | sends message
+    ▼
+Consumer processes
+    |
+    |
+BasicAck()
+    |
+    ▼
+Message removed
+
+This is safer for production systems.
+
+9. Keep application alive
+Console.WriteLine("Press [enter] to exit...");
+Console.ReadLine();
+
+Without this, your program would finish immediately:
+
+Start consumer
+     |
+     |
+Program exits ❌
+
+This keeps the consumer running:
+
+Start consumer
+     |
+     |
+Wait for messages
+     |
+     |
+Receive messages
+Complete flow
+Publisher
+   |
+   |
+BasicPublish()
+   |
+   ▼
+RabbitMQ Queue
+   |
+   |
+BasicConsumeAsync()
+   |
+   ▼
+AsyncEventingBasicConsumer
+   |
+   |
+ReceivedAsync event
+   |
+   |
+Your lambda executes
+   |
+   |
+Print message
+
+Your code is now using the modern RabbitMQ.Client 7.2.1 async API, which is the style you will see in newer .NET applications.
