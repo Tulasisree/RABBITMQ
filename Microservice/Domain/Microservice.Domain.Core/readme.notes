@@ -1,0 +1,3 @@
+1st imp interface in our architecture is Event Bus
+
+dotnet add MediatR -> message class
