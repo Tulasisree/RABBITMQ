@@ -1,0 +1,1 @@
+"dotnet package add Microsoft.Extensions.DependencyInjection"
