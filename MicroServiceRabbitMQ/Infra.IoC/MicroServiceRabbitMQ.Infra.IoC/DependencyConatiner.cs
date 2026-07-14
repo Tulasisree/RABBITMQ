@@ -1,7 +1,10 @@
-﻿using Microservice.Domain.Core.Bus;
+﻿using MediatR;
+using Microservice.Domain.Core.Bus;
 using Microservice.Infrastructure.Bus;
 using MicroServiceRabbitMQ.Banking.Data.Context;
 using MicroServiceRabbitMQ.Banking.Data.Repository;
+using MicroServiceRabbitMQ.Banking.Domain.CommandHandler;
+using MicroServiceRabbitMQ.Banking.Domain.Commands;
 using MicroServiceRabbitMQ.Banking.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using MiscroServiceRabbitMQ.Banking.Application.Interfaces;
@@ -20,6 +23,9 @@ public class DependencyContainer
         });
         //Domain Bus
         services.AddTransient<IEventBus, RabbitMQBus>();
+
+        //Domain Banking commands
+        services.AddTransient<IRequestHandler<CreateTransferCommand, bool>,TransferCommandHandler>();
 
         //Application services
         services.AddTransient<IAccountService,AccountService>();

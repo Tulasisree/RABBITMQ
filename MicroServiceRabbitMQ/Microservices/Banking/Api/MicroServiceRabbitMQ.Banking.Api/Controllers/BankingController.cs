@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using MicroServiceRabbitMQ.Banking.Api.Models;
 using MiscroServiceRabbitMQ.Banking.Application.Interfaces;
+using MiscroServiceRabbitMQ.Banking.Application.Models;
 
 namespace MicroServiceRabbitMQ.Banking.Api.Controllers;
 
@@ -20,5 +21,13 @@ public class BankingController : Controller
     public IActionResult Get()
     {
         return Ok(_accountService.GetAccounts());
+    }
+
+    [HttpPost]
+    [Route("api/[controller]")]
+    public IActionResult Post([FromBody] AccountTransfer accountTransfer)
+    {
+        _accountService.Transfer(accountTransfer);
+        return Ok(accountTransfer);
     }
 }
