@@ -7,15 +7,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Producer", "Producer\Produc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Consumer", "Consumer\Consumer.csproj", "{D95BFDAB-1669-4CA1-A4B4-B38AE6BE352A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Microservice", "Microservice", "{35FC648C-244F-61BA-7BAF-5698EF070C1C}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MicroServiceRabbitMQ", "MicroServiceRabbitMQ", "{35FC648C-244F-61BA-7BAF-5698EF070C1C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{2C10F0F2-13D6-E0D3-E31F-8537E793897A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microservice.Domain.Core", "Microservice\Domain\Microservice.Domain.Core\Microservice.Domain.Core.csproj", "{16B35228-D5C7-4ACD-A79C-BCB4AB8E010B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microservice.Domain.Core", "MicroServiceRabbitMQ\Domain\Microservice.Domain.Core\Microservice.Domain.Core.csproj", "{16B35228-D5C7-4ACD-A79C-BCB4AB8E010B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra.Bus", "Infra.Bus", "{40107D07-CAAB-E451-B3FC-EC272E6AFB3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microservice.Infrastructure.Bus", "Microservice\Infra.Bus\Microservice.Infrastructure.Bus\Microservice.Infrastructure.Bus.csproj", "{E83278F7-22ED-474E-945C-FA9C83AF80B1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microservice.Infrastructure.Bus", "MicroServiceRabbitMQ\Infra.Bus\Microservice.Infrastructure.Bus\Microservice.Infrastructure.Bus.csproj", "{E83278F7-22ED-474E-945C-FA9C83AF80B1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
